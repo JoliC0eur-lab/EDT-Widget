@@ -14,7 +14,7 @@ body{
     font-family:'Nunito', sans-serif;
 }
 
-/* 📱 Widget */
+/* Widget */
 .widget-edt{
     position:absolute;
     top:15%;
@@ -71,25 +71,24 @@ td{
     min-width:60px;
     padding:2px;
     text-align:center;
-    vertical-align:middle;
     background:#fffafc;
+}
+
+td[contenteditable]{
+    outline:none;
     cursor:text;
 }
 
-td:focus{
-    outline:none;
-}
-
-/* 🎨 Palette */
+/* Palette */
 .palette{
-    position:absolute;
+    position:fixed;
     display:none;
     background:#ffffff;
     border-radius:14px;
     padding:6px;
-    box-shadow:0 6px 14px rgba(0,0,0,0.12);
+    box-shadow:0 6px 14px rgba(0,0,0,0.15);
     gap:6px;
-    z-index:10;
+    z-index:999;
 }
 
 .color{
@@ -110,7 +109,7 @@ td:focus{
 </head>
 <body>
 
-<div class="widget-edt" id="widget">
+<div class="widget-edt">
     <div class="table-wrapper">
         <table id="edt">
             <tr>
@@ -122,7 +121,7 @@ td:focus{
     </div>
 </div>
 
-<!-- 🎨 Palette -->
+<!-- Palette -->
 <div class="palette" id="palette">
     <div class="color c1"></div>
     <div class="color c2"></div>
@@ -137,7 +136,7 @@ const table = document.getElementById("edt");
 const palette = document.getElementById("palette");
 let activeCell = null;
 
-/* Création des lignes */
+/* Création du tableau */
 for(let h=5; h<=23; h++){
     const row = document.createElement("tr");
 
@@ -150,16 +149,16 @@ for(let h=5; h<=23; h++){
         const cell = document.createElement("td");
         cell.contentEditable = true;
 
-        const key = `cell-${h}-${d}`;
+        const key = `edt-${h}-${d}`;
         const saved = JSON.parse(localStorage.getItem(key)) || {};
         cell.textContent = saved.text || "";
         cell.style.background = saved.color || "#fffafc";
 
-        cell.addEventListener("focus", e=>{
+        cell.addEventListener("focus", ()=>{
             activeCell = cell;
-            const rect = cell.getBoundingClientRect();
-            palette.style.left = rect.left + "px";
-            palette.style.top = (rect.top - 40) + "px";
+            const r = cell.getBoundingClientRect();
+            palette.style.left = r.left + "px";
+            palette.style.top = (r.top - 40) + "px";
             palette.style.display = "flex";
         });
 
@@ -172,36 +171,29 @@ for(let h=5; h<=23; h++){
     table.appendChild(row);
 }
 
-/* Palette clic */
-document.querySelectorAll(".color").forEach(c=>{
-    c.addEventListener("click",()=>{
-        if(!activeCell) return;
-        activeCell.style.background = c.style.background;
-        saveCell(activeCell);
-        palette.style.display="none";
-    });
-});
-
 /* Sauvegarde */
-function saveCell(cell, keyOverride){
-    const key = keyOverride || findKey(cell);
+function saveCell(cell, key){
     localStorage.setItem(key, JSON.stringify({
         text: cell.textContent,
         color: cell.style.background
     }));
 }
 
-/* Trouver clé */
-function findKey(cell){
-    const row = cell.parentElement.rowIndex;
-    const col = cell.cellIndex;
-    const hour = table.rows[row].cells[0].textContent;
-    return `cell-${hour}-${col-1}`;
-}
+/* Couleur */
+document.querySelectorAll(".color").forEach(c=>{
+    c.addEventListener("click",()=>{
+        if(!activeCell) return;
+        activeCell.style.background = c.style.background;
+        const hour = activeCell.parentElement.cells[0].textContent;
+        const day = activeCell.cellIndex - 1;
+        saveCell(activeCell, `edt-${hour}-${day}`);
+        palette.style.display="none";
+    });
+});
 
-/* Cacher palette si clic ailleurs */
+/* Cacher palette */
 document.addEventListener("click",e=>{
-    if(!palette.contains(e.target) && e.target.tagName!=="TD"){
+    if(!palette.contains(e.target) && e.target.tagName !== "TD"){
         palette.style.display="none";
     }
 });

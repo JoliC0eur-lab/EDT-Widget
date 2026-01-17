@@ -2,20 +2,37 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Emploi du temps 🌸</title>
+<title>Mini EDT 🌸</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600&display=swap" rel="stylesheet">
 
 <style>
 body{
     margin:0;
-    background:#f2ecf9;
+    background:#ffffff;
+    height:100vh;
     font-family:'Nunito', sans-serif;
-    padding:20px;
 }
 
-/* Conteneur scroll */
-.schedule{
+/* 📱 Widget */
+.widget-edt{
+    position:absolute;
+    top:15%;
+    left:50%;
+    transform:translateX(-50%);
+    width:320px;
+    height:360px;
+    background:linear-gradient(135deg,#f6e9f7,#fde8ef);
+    border-radius:26px;
+    padding:10px;
+    resize:both;
+    overflow:hidden;
+}
+
+/* Scroll interne */
+.table-wrapper{
+    width:100%;
+    height:100%;
     overflow:auto;
 }
 
@@ -23,104 +40,173 @@ body{
 table{
     border-collapse:collapse;
     width:100%;
-    min-width:1000px;
+    font-size:11px;
 }
 
-/* En-têtes jours */
+/* En-têtes */
 th{
-    background:#ffdede;
-    color:#6a4c7a;
-    padding:10px;
-    font-weight:600;
     position:sticky;
     top:0;
+    background:#ffe1ec;
+    color:#7a3e55;
+    padding:6px;
     z-index:2;
 }
 
-/* Colonne heures */
+/* Heures */
 .hour{
-    background:#f7f2fb;
-    color:#6a4c7a;
-    text-align:center;
-    font-size:13px;
-    width:70px;
     position:sticky;
     left:0;
+    background:#f8f0f6;
+    color:#7a3e55;
+    text-align:center;
+    width:38px;
     z-index:1;
 }
 
 /* Cellules */
 td{
+    border:1px solid #edd3df;
+    height:28px;
+    min-width:60px;
+    padding:2px;
+    text-align:center;
+    vertical-align:middle;
     background:#fffafc;
-    border:1px solid #e1d7f0;
-    height:42px;
-    min-width:120px;
-    padding:4px;
-    vertical-align:top;
-    font-size:13px;
-    color:#5b3f68;
-}
-
-/* Cellules éditables */
-td[contenteditable]{
-    outline:none;
     cursor:text;
 }
 
-td[contenteditable]:focus{
-    background:#fff0f6;
+td:focus{
+    outline:none;
 }
+
+/* 🎨 Palette */
+.palette{
+    position:absolute;
+    display:none;
+    background:#ffffff;
+    border-radius:14px;
+    padding:6px;
+    box-shadow:0 6px 14px rgba(0,0,0,0.12);
+    gap:6px;
+    z-index:10;
+}
+
+.color{
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    cursor:pointer;
+}
+
+/* Couleurs pastel */
+.c1{background:#ffd6e0;}
+.c2{background:#ffe7b3;}
+.c3{background:#d7f5e9;}
+.c4{background:#dbe9ff;}
+.c5{background:#ede1ff;}
+.c6{background:#ffdede;}
 </style>
 </head>
 <body>
 
-<div class="schedule">
-<table id="scheduleTable">
-    <tr>
-        <th>Heure</th>
-        <th>Lundi</th>
-        <th>Mardi</th>
-        <th>Mercredi</th>
-        <th>Jeudi</th>
-        <th>Vendredi</th>
-        <th>Samedi</th>
-        <th>Dimanche</th>
-    </tr>
-</table>
+<div class="widget-edt" id="widget">
+    <div class="table-wrapper">
+        <table id="edt">
+            <tr>
+                <th>H</th>
+                <th>L</th><th>M</th><th>Me</th>
+                <th>J</th><th>V</th><th>S</th><th>D</th>
+            </tr>
+        </table>
+    </div>
+</div>
+
+<!-- 🎨 Palette -->
+<div class="palette" id="palette">
+    <div class="color c1"></div>
+    <div class="color c2"></div>
+    <div class="color c3"></div>
+    <div class="color c4"></div>
+    <div class="color c5"></div>
+    <div class="color c6"></div>
 </div>
 
 <script>
-const table = document.getElementById("scheduleTable");
-const startHour = 5;
-const endHour = 23;
+const table = document.getElementById("edt");
+const palette = document.getElementById("palette");
+let activeCell = null;
 
-/* Création du tableau */
-for(let h = startHour; h <= endHour; h++){
+/* Création des lignes */
+for(let h=5; h<=23; h++){
     const row = document.createElement("tr");
 
-    const hourCell = document.createElement("td");
-    hourCell.className = "hour";
-    hourCell.textContent = h + "h";
-    row.appendChild(hourCell);
+    const hour = document.createElement("td");
+    hour.textContent = h;
+    hour.className = "hour";
+    row.appendChild(hour);
 
-    for(let d = 0; d < 7; d++){
+    for(let d=0; d<7; d++){
         const cell = document.createElement("td");
         cell.contentEditable = true;
 
         const key = `cell-${h}-${d}`;
-        cell.textContent = localStorage.getItem(key) || "";
+        const saved = JSON.parse(localStorage.getItem(key)) || {};
+        cell.textContent = saved.text || "";
+        cell.style.background = saved.color || "#fffafc";
 
-        /* Sauvegarde automatique */
-        cell.addEventListener("input", () => {
-            localStorage.setItem(key, cell.textContent);
+        cell.addEventListener("focus", e=>{
+            activeCell = cell;
+            const rect = cell.getBoundingClientRect();
+            palette.style.left = rect.left + "px";
+            palette.style.top = (rect.top - 40) + "px";
+            palette.style.display = "flex";
+        });
+
+        cell.addEventListener("input", ()=>{
+            saveCell(cell, key);
         });
 
         row.appendChild(cell);
     }
-
     table.appendChild(row);
 }
+
+/* Palette clic */
+document.querySelectorAll(".color").forEach(c=>{
+    c.addEventListener("click",()=>{
+        if(!activeCell) return;
+        activeCell.style.background = c.style.background;
+        saveCell(activeCell);
+        palette.style.display="none";
+    });
+});
+
+/* Sauvegarde */
+function saveCell(cell, keyOverride){
+    const key = keyOverride || findKey(cell);
+    localStorage.setItem(key, JSON.stringify({
+        text: cell.textContent,
+        color: cell.style.background
+    }));
+}
+
+/* Trouver clé */
+function findKey(cell){
+    const row = cell.parentElement.rowIndex;
+    const col = cell.cellIndex;
+    const hour = table.rows[row].cells[0].textContent;
+    return `cell-${hour}-${col-1}`;
+}
+
+/* Cacher palette si clic ailleurs */
+document.addEventListener("click",e=>{
+    if(!palette.contains(e.target) && e.target.tagName!=="TD"){
+        palette.style.display="none";
+    }
+});
 </script>
 
 </body>
 </html>
+

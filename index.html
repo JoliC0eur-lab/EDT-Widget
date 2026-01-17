@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Emploi du temps 🌸</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600&display=swap" rel="stylesheet">
+
+<style>
+body{
+    margin:0;
+    background:#f2ecf9;
+    font-family:'Nunito', sans-serif;
+    padding:20px;
+}
+
+/* Conteneur scroll */
+.schedule{
+    overflow:auto;
+}
+
+/* Tableau */
+table{
+    border-collapse:collapse;
+    width:100%;
+    min-width:1000px;
+}
+
+/* En-têtes jours */
+th{
+    background:#ffdede;
+    color:#6a4c7a;
+    padding:10px;
+    font-weight:600;
+    position:sticky;
+    top:0;
+    z-index:2;
+}
+
+/* Colonne heures */
+.hour{
+    background:#f7f2fb;
+    color:#6a4c7a;
+    text-align:center;
+    font-size:13px;
+    width:70px;
+    position:sticky;
+    left:0;
+    z-index:1;
+}
+
+/* Cellules */
+td{
+    background:#fffafc;
+    border:1px solid #e1d7f0;
+    height:42px;
+    min-width:120px;
+    padding:4px;
+    vertical-align:top;
+    font-size:13px;
+    color:#5b3f68;
+}
+
+/* Cellules éditables */
+td[contenteditable]{
+    outline:none;
+    cursor:text;
+}
+
+td[contenteditable]:focus{
+    background:#fff0f6;
+}
+</style>
+</head>
+<body>
+
+<div class="schedule">
+<table id="scheduleTable">
+    <tr>
+        <th>Heure</th>
+        <th>Lundi</th>
+        <th>Mardi</th>
+        <th>Mercredi</th>
+        <th>Jeudi</th>
+        <th>Vendredi</th>
+        <th>Samedi</th>
+        <th>Dimanche</th>
+    </tr>
+</table>
+</div>
+
+<script>
+const table = document.getElementById("scheduleTable");
+const startHour = 5;
+const endHour = 23;
+
+/* Création du tableau */
+for(let h = startHour; h <= endHour; h++){
+    const row = document.createElement("tr");
+
+    const hourCell = document.createElement("td");
+    hourCell.className = "hour";
+    hourCell.textContent = h + "h";
+    row.appendChild(hourCell);
+
+    for(let d = 0; d < 7; d++){
+        const cell = document.createElement("td");
+        cell.contentEditable = true;
+
+        const key = `cell-${h}-${d}`;
+        cell.textContent = localStorage.getItem(key) || "";
+
+        /* Sauvegarde automatique */
+        cell.addEventListener("input", () => {
+            localStorage.setItem(key, cell.textContent);
+        });
+
+        row.appendChild(cell);
+    }
+
+    table.appendChild(row);
+}
+</script>
+
+</body>
+</html>
